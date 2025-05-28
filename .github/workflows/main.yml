@@ -1,0 +1,35 @@
+name: Zomato Clone CI/CD
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 🧾 Checkout Code
+      uses: actions/checkout@v3
+
+    - name: 🔧 Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+    - name: 📦 Install Dependencies
+      run: npm ci
+
+    - name: 🧹 Lint Check (ESLint)
+      run: npx eslint . || true
+
+    - name: 🛡️ Dependency Vulnerability Scan
+      run: npm audit --audit-level=low || true
+
+    - name: 🐳 Build Docker Image
+      run: docker build -t zomato-clone .
+
+    - name: 🔍 Scan Docker Image (Trivy)
+      run: |
+        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+        trivy image --severity CRITICAL,HIGH zomato-clone || true
